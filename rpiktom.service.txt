@@ -1,6 +1,7 @@
 [Unit]
 Description = Start/Stop RPI Remote Forward
-After = multi-user.target
+Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type = simple
@@ -9,4 +10,4 @@ KillSignal = SIGINT
 ExecStart = /usr/bin/python3 /home/pi/rpi-keyboard-to-mqtt/execute.py
 
 [Install]
-WantedBy = multi-user.target
+WantedBy=multi-user.target
