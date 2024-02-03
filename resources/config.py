@@ -1,8 +1,6 @@
 import sys
 defaults = {'which_notifier': 'mqtt',
             'host': '127.0.0.1',
-            'rest_port': 8123,
-            'rest_token': '',
             'mqtt_user': 'mqtt',
             'mqtt_pass': 'mqtt_password',
             'mqtt_port': 1883,

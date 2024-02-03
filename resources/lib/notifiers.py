@@ -29,7 +29,7 @@ class MqttNotifier:
         loglines.append('sending %s to mqtt' % payload)
         if has_mqtt:
             try:
-                publish.single(mqtt_publish,
+                publish.single(self.MQTTPATH,
                                payload=payload,
                                retain=self.MQTTRETAIN,
                                qos=self.MQTTQOS,

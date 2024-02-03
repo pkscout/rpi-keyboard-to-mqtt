@@ -1,7 +1,7 @@
 import resources.config as config
 import os
 import keyboard
-from resources.lib.notifiers import MqttNotifier, HaRestNotifier, NoNotifier
+from resources.lib.notifiers import MqttNotifier, NoNotifier
 from resources.lib.xlogger import Logger
 
 
@@ -19,7 +19,8 @@ class RemoteForward:
                 e = keyboard.read_event()
                 if e.event_type == 'up':
                     self.LW.log(["recieved code: " + str(e.scan_code)])
-                    self.NOTIFIER.Send(e.scan_code)
+                    loglines = self.NOTIFIER.Send(str(e.scan_code))
+                    self.LW.log(loglines)
         except KeyboardInterrupt:
             self.KEEPRUNNING = False
         except Exception as e:
