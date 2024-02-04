@@ -33,7 +33,8 @@ class MqttNotifier:
 
     def Send(self, payload):
         loglines = []
-        loglines.append('sending %s to mqtt' % payload)
+        loglines.append('sending %s to mqtt topic %s' %
+                        (payload, self.MQTTPATH))
         if has_mqtt:
             try:
                 publish.single(self.MQTTPATH,
