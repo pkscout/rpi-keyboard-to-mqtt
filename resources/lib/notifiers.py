@@ -1,6 +1,7 @@
 try:
     import paho.mqtt.publish as publish
     import paho.mqtt.client as mqtt
+    import os
     has_mqtt = True
 except ImportError:
     has_mqtt = False
@@ -12,8 +13,14 @@ class MqttNotifier:
                          'password': config.Get('mqtt_pass')}
         self.MQTTHOST = config.Get('host')
         self.MQTTPORT = config.Get('mqtt_port')
-        self.MQTTCLIENT = config.Get('mqtt_clientid')
-        self.MQTTPATH = config.Get('mqtt_path')
+        client = config.Get('mqtt_clientid')
+        if not client:
+            client = os.uname()[1]
+        self.MQTTCLIENT = client
+        path = config.Get('mqtt_path')
+        if path[-1] != '/':
+            path = path + '/'
+        self.MQTTPATH = path + client
         self.MQTTRETAIN = config.Get('mqtt_retain')
         self.MQTTQOS = config.Get('mqtt_qos')
         version = config.Get('mqtt_version')
