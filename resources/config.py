@@ -9,6 +9,7 @@ defaults = {'which_notifier': 'mqtt',
             'mqtt_retain': False,
             'mqtt_qos': 0,
             'mqtt_version': 'v5',
+            'holdmin': 300,
             'logbackups': 1,
             'debug': False}
 

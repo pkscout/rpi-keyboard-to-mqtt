@@ -1,5 +1,7 @@
 import resources.config as config
 import os
+import traceback
+from datetime import datetime
 import keyboard
 from resources.lib.notifiers import MqttNotifier, NoNotifier
 from resources.lib.xlogger import Logger
@@ -11,15 +13,28 @@ class RemoteForward:
         self.LW = lw
         self.KEEPRUNNING = True
         self.NOTIFIER = self._pick_notifier(config.Get('which_notifier'))
+        self.HOLDMIN = config.Get('holdmin')
 
     def Start(self):
         self.LW.log(['starting up RemoteForward'], 'info')
         try:
+            down_time = None
             while self.KEEPRUNNING:
                 e = keyboard.read_event()
+                if e.event_type == 'down' and not down_time:
+                    down_time = datetime.now()
+                    self.LW.log(["key down at " + str(down_time)])
                 if e.event_type == 'up':
+                    up_time = datetime.now()
+                    hold_time = (up_time - down_time).total_seconds() * 1000
+                    down_time = None
                     self.LW.log(["recieved code: " + str(e.scan_code)])
-                    loglines = self.NOTIFIER.Send(str(e.scan_code))
+                    self.LW.log(["held for %sms" % str(hold_time)])
+                    if hold_time < self.HOLDMIN:
+                        code = str(e.scan_code)
+                    else:
+                        code = 'l' + str(e.scan_code)
+                    loglines = self.NOTIFIER.Send(code)
                     self.LW.log(loglines)
         except KeyboardInterrupt:
             self.KEEPRUNNING = False
