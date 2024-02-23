@@ -1,2 +1,5 @@
+v 1.0.1
+- changed long press string for readability
+
 v 1.0.0
 - initial code upload

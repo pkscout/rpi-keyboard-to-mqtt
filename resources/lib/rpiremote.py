@@ -33,7 +33,7 @@ class RemoteForward:
                     if hold_time < self.HOLDMIN:
                         code = str(e.scan_code)
                     else:
-                        code = 'l' + str(e.scan_code)
+                        code = str(e.scan_code) + '-L'
                     loglines = self.NOTIFIER.Send(code)
                     self.LW.log(loglines)
         except KeyboardInterrupt:
