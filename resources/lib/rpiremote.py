@@ -50,7 +50,7 @@ class OtherSensors(threading.Thread):
                 category='diagnostic',
                 icon='mdi:cpu-32-bit'))
             self.LW.log(self.NOTIFIER.Send(
-                psutil.cpu_percent(), 'Memory Used',
+                psutil.virtual_memory()[2], 'Memory Used',
                 unit='%',
                 category='diagnostic',
                 icon='mdi:memory'))
@@ -84,6 +84,19 @@ class OtherSensors(threading.Thread):
     def run(self):
         while self.KEEPRUNNING:
             time.sleep(self.UPDATE_INTERVAL)
+            if has_psutil:
+                self.LW.log(self.NOTIFIER.Send(
+                    psutil.cpu_percent(), 'CPU Load',
+                    unit='%',
+                    category='diagnostic',
+                    icon='mdi:cpu-32-bit',
+                    log=False))
+                self.LW.log(self.NOTIFIER.Send(
+                    psutil.virtual_memory()[2], 'Memory Used',
+                    unit='%',
+                    category='diagnostic',
+                    icon='mdi:memory',
+                    log=False))
             self.LW.log(self.NOTIFIER.Send(
                 self._get_uptime(), 'Uptime',
                 category='diagnostic',
