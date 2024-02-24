@@ -26,9 +26,9 @@ class MqttNotifier:
         self.MQTTCLIENT = config.Get('mqtt_clientid')
         if not self.MQTTCLIENT:
             self.MQTTCLIENT = os.uname()[1]
-        device_id = _cleanup(config.Get('device_identifier'))
-        if not device_id:
-            device_id = hex(uuid.getnode())
+        self.DEVICEID = _cleanup(config.Get('device_identifier'))
+        if not self.DEVICEID:
+            self.DEVICEID = hex(uuid.getnode())
         device_name = config.Get('device_name')
         if not device_name:
             device_name = self.MQTTCLIENT
@@ -45,7 +45,7 @@ class MqttNotifier:
             self.MQTTVERSION = mqtt.MQTTv311
         else:
             self.MQTTVERSION = mqtt.MQTTv31
-        self.DEVICE = {'identifiers': [device_id],
+        self.DEVICE = {'identifiers': [self.DEVICEID],
                        'name': device_name,
                        'manufacturer': config.Get('device_manufacturer'),
                        'model': config.Get('device_model'),
@@ -75,7 +75,8 @@ class MqttNotifier:
                 'MQTT python libraries are not installed, no message sent')
         return loglines
 
-    def Send(self, payload, friendly_name, force_update=False, category=None, icon=None, log=True):
+    def Send(self, payload, friendly_name, unit=None,
+             force_update=False, category=None, icon=None, log=True):
         loglines = []
         entity_id = _cleanup(friendly_name)
         topic = '%s/%s/' % (self.MQTTPATH, entity_id)
@@ -83,9 +84,11 @@ class MqttNotifier:
             config_payload = {}
             mqtt_config = topic + 'config'
             config_payload['name'] = friendly_name
-            config_payload['unique_id'] = 'LsBeEFYQBzTn4wZzxjq9_' + entity_id
+            config_payload['unique_id'] = '%s_%s' % (self.DEVICEID, entity_id)
             config_payload['state_topic'] = topic + 'state'
             config_payload['device'] = self.DEVICE
+            if unit:
+                config_payload['unit_of_measurement'] = unit
             if force_update:
                 config_payload['force_update'] = force_update
             if category:
