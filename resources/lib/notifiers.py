@@ -1,7 +1,9 @@
 try:
     import paho.mqtt.publish as publish
     import paho.mqtt.client as mqtt
+    import json
     import os
+    import re
     import uuid
     has_mqtt = True
 except ImportError:
@@ -31,9 +33,9 @@ class MqttNotifier:
         if not device_name:
             device_name = self.MQTTCLIENT
         path = config.Get('mqtt_path')
-        if path[-1] == '/':
-            path = path[:-1]
-        self.MQTTPATH = path + client
+        if path[-1] != '/':
+            path = path + '/'
+        self.MQTTPATH = path + self.MQTTCLIENT
         self.MQTTRETAIN = config.Get('mqtt_retain')
         self.MQTTQOS = config.Get('mqtt_qos')
         version = config.Get('mqtt_version')
@@ -77,19 +79,21 @@ class MqttNotifier:
         entity_id = _cleanup(friendly_name)
         topic = '%s/%s/' % (self.MQTTPATH, entity_id)
         if self.MQTTDISCOVER:
+            config_payload = {}
             mqtt_config = topic + 'config'
-            payload['name'] = friendly_name
-            payload['unique_id'] = 'LsBeEFYQBzTn4wZzxjq9_' + entity_id
-            payload['state_topic'] = topic + 'state'
-            payload['device'] = self.DEVICE
+            config_payload['name'] = friendly_name
+            config_payload['unique_id'] = 'LsBeEFYQBzTn4wZzxjq9_' + entity_id
+            config_payload['state_topic'] = topic + 'state'
+            config_payload['device'] = self.DEVICE
             if force_update:
-                payload['force_update'] = force_update
+                config_payload['force_update'] = force_update
             if category:
-                payload['entity_category '] = category
+                config_payload['entity_category '] = category
             if icon:
-                payload[icon] = icon
-            loglines.append(self._mqtt_send(mqtt_config, json.dumps(payload)))
-        loglines.append(self._mqtt_send(topic + 'state', payload))
+                config_payload['icon'] = icon
+            loglines = loglines + self._mqtt_send(
+                mqtt_config, json.dumps(config_payload))
+        loglines = loglines + self._mqtt_send(topic + 'state', payload)
         return loglines
 
 

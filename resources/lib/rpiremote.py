@@ -15,6 +15,14 @@ class RemoteForward:
         self.NOTIFIER = self._pick_notifier(config.Get('which_notifier'))
         self.HOLDMIN = config.Get('holdmin')
         self.STARTUPTIME = datetime.now()
+        self.LW.log(self.NOTIFIER.Send(
+            '0s', 'Uptime',
+            category='diagnostic',
+            icon='mdi:clock-check-outline'))
+        self.LW.log(self.NOTIFIER.Send(
+            '-1', 'Key Press',
+            force_update=True,
+            icon='mdi:button-pointer'))
 
     def Start(self):
         self.LW.log(['starting up RemoteForward'], 'info')
