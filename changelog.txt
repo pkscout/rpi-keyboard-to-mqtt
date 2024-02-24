@@ -1,5 +1,6 @@
 v.1.1.0
 - by default now sends discovery topic to create HA sensors
+- added uptime sensor
 
 v 1.0.1
 - changed long press string for readability
