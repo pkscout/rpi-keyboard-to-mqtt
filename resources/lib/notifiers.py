@@ -1,10 +1,10 @@
+import json
+import os
+import re
+import uuid
 try:
     import paho.mqtt.publish as publish
     import paho.mqtt.client as mqtt
-    import json
-    import os
-    import re
-    import uuid
     has_mqtt = True
 except ImportError:
     has_mqtt = False

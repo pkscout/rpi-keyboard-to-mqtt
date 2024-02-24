@@ -1,7 +1,7 @@
 import resources.config as config
 import os
-import psutil
-import socket
+
+import re
 import time
 import traceback
 import threading
@@ -10,6 +10,11 @@ from datetime import datetime
 import keyboard
 from resources.lib.notifiers import MqttNotifier, NoNotifier
 from resources.lib.xlogger import Logger
+try:
+    import psutil
+    has_psutil = True
+except ImportError:
+    has_psutil = False
 
 
 def pick_notifier(whichnotifier, lw):
@@ -38,20 +43,17 @@ class OtherSensors(threading.Thread):
                      uuid.getnode())), 'Mac address',
             category='diagnostic',
             icon='mdi:ethernet'))
-        self.LW.log(self.NOTIFIER.Send(
-            socket.gethostbyname(socket.gethostname()), 'IP address',
-            category='diagnostic',
-            icon='mdi:ip'))
-        self.LW.log(self.NOTIFIER.Send(
-            psutil.cpu_percent(), 'CPU Load',
-            unit_of_measure='%',
-            category='diagnostic',
-            icon='mdi:cpu-32-bit'))
-        self.LW.log(self.NOTIFIER.Send(
-            psutil.cpu_percent(), 'Memory Used',
-            unit='%',
-            category='diagnostic',
-            icon='mdi:memory'))
+        if has_psutil:
+            self.LW.log(self.NOTIFIER.Send(
+                psutil.cpu_percent(), 'CPU Load',
+                unit='%',
+                category='diagnostic',
+                icon='mdi:cpu-32-bit'))
+            self.LW.log(self.NOTIFIER.Send(
+                psutil.cpu_percent(), 'Memory Used',
+                unit='%',
+                category='diagnostic',
+                icon='mdi:memory'))
         self.LW.log(self.NOTIFIER.Send(
             '0s', 'Uptime',
             category='diagnostic',
@@ -125,8 +127,8 @@ class RemoteForward:
                     self.LW.log(self.NOTIFIER.Send(
                         code, 'Key Press',
                         force_update=True,
-                        icon='mdi:button-pointer'),
-                        log=False)
+                        icon='mdi:button-pointer',
+                        log=False))
         except KeyboardInterrupt:
             self.KEEPRUNNING = False
         except Exception as e:
