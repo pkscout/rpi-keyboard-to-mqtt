@@ -14,12 +14,20 @@ class RemoteForward:
         self.KEEPRUNNING = True
         self.NOTIFIER = self._pick_notifier(config.Get('which_notifier'))
         self.HOLDMIN = config.Get('holdmin')
+        self.STARTUPTIME = datetime.now()
 
     def Start(self):
         self.LW.log(['starting up RemoteForward'], 'info')
         try:
             down_time = None
+            last_update = datetime.now()
             while self.KEEPRUNNING:
+                if (datetime.now() - last_update).seconds > 2:
+                    last_update = datetime.now()
+                    self.LW.log(self.NOTIFIER.Send(
+                        self._get_uptime(), 'Uptime',
+                        category='diagnostic',
+                        icon='mdi:clock-check-outline'))
                 e = keyboard.read_event()
                 if e.event_type == 'down' and not down_time:
                     down_time = datetime.now()
@@ -34,14 +42,32 @@ class RemoteForward:
                         code = str(e.scan_code)
                     else:
                         code = str(e.scan_code) + '-L'
-                    loglines = self.NOTIFIER.Send(code)
-                    self.LW.log(loglines)
+                    self.LW.log(self.NOTIFIER.Send(
+                        code, 'Key Press',
+                        force_update=True,
+                        icon='mdi:button-pointer'))
         except KeyboardInterrupt:
             self.KEEPRUNNING = False
         except Exception as e:
             self.KEEPRUNNING = False
             self.LW.log([traceback.format_exc()], 'error')
             print(traceback.format_exc())
+
+    def _get_uptime(self):
+        up_time = datetime.now() - self.STARTUPTIME
+        fmt = ""
+        d = {"days": up_time.days}
+        d["hours"], rem = divmod(up_time.seconds, 3600)
+        d["minutes"], d["seconds"] = divmod(rem, 60)
+        if d['days'] > 0:
+            fmt = fmt + "{days}d "
+        if d['hours'] > 0:
+            fmt = fmt + "{hours}h "
+        if d['minutes'] > 0:
+            fmt = fmt + "{minutes}m "
+        if d['seconds'] > 0:
+            fmt = fmt + "{seconds}s"
+        return fmt.format(**d)
 
     def _pick_notifier(self, whichnotifier):
         self.LW.log(['setting up %s notifier' % str(whichnotifier)])
