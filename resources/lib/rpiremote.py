@@ -1,8 +1,11 @@
 import resources.config as config
 import os
+import psutil
+import socket
 import time
 import traceback
 import threading
+import uuid
 from datetime import datetime
 import keyboard
 from resources.lib.notifiers import MqttNotifier, NoNotifier
@@ -30,6 +33,25 @@ class OtherSensors(threading.Thread):
         self.RUNNING = True
         self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
         self.STARTUPTIME = datetime.now()
+        self.LW.log(self.NOTIFIER.Send(
+            ':'.join(re.findall('..', '%012x' %
+                     uuid.getnode())), 'Mac address',
+            category='diagnostic',
+            icon='mdi:ethernet'))
+        self.LW.log(self.NOTIFIER.Send(
+            socket.gethostbyname(socket.gethostname()), 'IP address',
+            category='diagnostic',
+            icon='mdi:ip'))
+        self.LW.log(self.NOTIFIER.Send(
+            psutil.cpu_percent(), 'CPU Load',
+            unit_of_measure='%',
+            category='diagnostic',
+            icon='mdi:cpu-32-bit'))
+        self.LW.log(self.NOTIFIER.Send(
+            psutil.cpu_percent(), 'Memory Used',
+            unit='%',
+            category='diagnostic',
+            icon='mdi:memory'))
         self.LW.log(self.NOTIFIER.Send(
             '0s', 'Uptime',
             category='diagnostic',
@@ -103,7 +125,8 @@ class RemoteForward:
                     self.LW.log(self.NOTIFIER.Send(
                         code, 'Key Press',
                         force_update=True,
-                        icon='mdi:button-pointer'))
+                        icon='mdi:button-pointer'),
+                        log=False)
         except KeyboardInterrupt:
             self.KEEPRUNNING = False
         except Exception as e:
