@@ -17,6 +17,7 @@ defaults = {'which_notifier': 'mqtt',
             'device_model': 'USB-RR-1000',
             'device_manufacturer': 'pkscout',
             'holdmin': 300,
+            'sensor_update_interval': 2,
             'logbackups': 1,
             'debug': False}
 

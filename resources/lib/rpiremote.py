@@ -1,10 +1,71 @@
 import resources.config as config
 import os
+import time
 import traceback
+import threading
 from datetime import datetime
 import keyboard
 from resources.lib.notifiers import MqttNotifier, NoNotifier
 from resources.lib.xlogger import Logger
+
+
+def pick_notifier(whichnotifier, lw):
+    lw.log(['setting up %s notifier' % str(whichnotifier)])
+    if not whichnotifier:
+        return NoNotifier(config=config)
+    if whichnotifier.lower() == 'mqtt':
+        return MqttNotifier(config=config)
+    else:
+        lw.log(['invalid notifier specified'])
+        return None
+
+
+class OtherSensors(threading.Thread):
+
+    def __init__(self, lw):
+        super(OtherSensors, self).__init__()
+        self.LW = lw
+        self.UPDATE_INTERVAL = config.Get('sensor_update_interval')
+        self.KEEPRUNNING = True
+        self.RUNNING = True
+        self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
+        self.STARTUPTIME = datetime.now()
+        self.LW.log(self.NOTIFIER.Send(
+            '0s', 'Uptime',
+            category='diagnostic',
+            icon='mdi:clock-check-outline'))
+
+    def Stop(self):
+        self.KEEPRUNNING = False
+
+    def Running(self):
+        return self.RUNNING
+
+    def _get_uptime(self):
+        up_time = datetime.now() - self.STARTUPTIME
+        fmt = ""
+        d = {"days": up_time.days}
+        d["hours"], rem = divmod(up_time.seconds, 3600)
+        d["minutes"], d["seconds"] = divmod(rem, 60)
+        if d['days'] > 0:
+            fmt = fmt + "{days}d "
+        if d['hours'] > 0:
+            fmt = fmt + "{hours}h "
+        if d['minutes'] > 0:
+            fmt = fmt + "{minutes}m "
+        if d['seconds'] > 0:
+            fmt = fmt + "{seconds}s"
+        return fmt.format(**d)
+
+    def run(self):
+        while self.KEEPRUNNING:
+            time.sleep(self.UPDATE_INTERVAL)
+            self.LW.log(self.NOTIFIER.Send(
+                self._get_uptime(), 'Uptime',
+                category='diagnostic',
+                icon='mdi:clock-check-outline',
+                log=False))
+        self.RUNNING = False
 
 
 class RemoteForward:
@@ -12,13 +73,8 @@ class RemoteForward:
     def __init__(self, lw):
         self.LW = lw
         self.KEEPRUNNING = True
-        self.NOTIFIER = self._pick_notifier(config.Get('which_notifier'))
+        self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
         self.HOLDMIN = config.Get('holdmin')
-        self.STARTUPTIME = datetime.now()
-        self.LW.log(self.NOTIFIER.Send(
-            '0s', 'Uptime',
-            category='diagnostic',
-            icon='mdi:clock-check-outline'))
         self.LW.log(self.NOTIFIER.Send(
             '-1', 'Key Press',
             force_update=True,
@@ -30,12 +86,6 @@ class RemoteForward:
             down_time = None
             last_update = datetime.now()
             while self.KEEPRUNNING:
-                if (datetime.now() - last_update).seconds > 2:
-                    last_update = datetime.now()
-                    self.LW.log(self.NOTIFIER.Send(
-                        self._get_uptime(), 'Uptime',
-                        category='diagnostic',
-                        icon='mdi:clock-check-outline'))
                 e = keyboard.read_event()
                 if e.event_type == 'down' and not down_time:
                     down_time = datetime.now()
@@ -61,40 +111,21 @@ class RemoteForward:
             self.LW.log([traceback.format_exc()], 'error')
             print(traceback.format_exc())
 
-    def _get_uptime(self):
-        up_time = datetime.now() - self.STARTUPTIME
-        fmt = ""
-        d = {"days": up_time.days}
-        d["hours"], rem = divmod(up_time.seconds, 3600)
-        d["minutes"], d["seconds"] = divmod(rem, 60)
-        if d['days'] > 0:
-            fmt = fmt + "{days}d "
-        if d['hours'] > 0:
-            fmt = fmt + "{hours}h "
-        if d['minutes'] > 0:
-            fmt = fmt + "{minutes}m "
-        if d['seconds'] > 0:
-            fmt = fmt + "{seconds}s"
-        return fmt.format(**d)
-
-    def _pick_notifier(self, whichnotifier):
-        self.LW.log(['setting up %s notifier' % str(whichnotifier)])
-        if not whichnotifier:
-            return NoNotifier(config=config)
-        if whichnotifier.lower() == 'mqtt':
-            return MqttNotifier(config=config)
-        else:
-            self.LW.log(['invalid notifier specified'])
-            return None
-
 
 class Main:
 
     def __init__(self, thepath):
-        self.LW = Logger(logfile=os.path.join(os.path.dirname(thepath), 'data', 'logs', 'logfile.log'),
-                         numbackups=config.Get('logbackups'), logdebug=config.Get('debug'))
-        self.LW.log(['script started, debug set to %s' %
-                    str(config.Get('debug'))], 'info')
-        self.REMOTEFORWARD = RemoteForward(self.LW)
-        self.REMOTEFORWARD.Start()
-        self.LW.log(['closing down RemoteForward'], 'info')
+        lw = Logger(logfile=os.path.join(os.path.dirname(thepath), 'data', 'logs', 'logfile.log'),
+                    numbackups=config.Get('logbackups'), logdebug=config.Get('debug'))
+        lw.log(['script started, debug set to %s' %
+                str(config.Get('debug'))], 'info')
+        othersensors = OtherSensors(lw)
+        othersensors.setDaemon(True)
+        othersensors.start()
+        remoteforward = RemoteForward(lw)
+        remoteforward.Start()
+        othersensors.Stop()
+        while othersensors.Running():
+            time.sleep(0.5)
+        othersensors.join()
+        lw.log(['closing down RemoteForward'], 'info')

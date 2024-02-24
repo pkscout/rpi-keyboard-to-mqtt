@@ -52,10 +52,11 @@ class MqttNotifier:
                        'sw_version': config.Get('device_version'),
                        'configuration_url': config.Get('device_config_url')}
 
-    def _mqtt_send(self, topic, payload):
+    def _mqtt_send(self, topic, payload, log=True):
         loglines = []
-        loglines.append('topic: %s' % topic)
-        loglines.append('payload: %s' % payload)
+        if log:
+            loglines.append('topic: %s' % topic)
+            loglines.append('payload: %s' % payload)
         if has_mqtt:
             try:
                 publish.single(topic,
@@ -74,7 +75,7 @@ class MqttNotifier:
                 'MQTT python libraries are not installed, no message sent')
         return loglines
 
-    def Send(self, payload, friendly_name, force_update=False, category=None, icon=None):
+    def Send(self, payload, friendly_name, force_update=False, category=None, icon=None, log=True):
         loglines = []
         entity_id = _cleanup(friendly_name)
         topic = '%s/%s/' % (self.MQTTPATH, entity_id)
@@ -88,12 +89,13 @@ class MqttNotifier:
             if force_update:
                 config_payload['force_update'] = force_update
             if category:
-                config_payload['entity_category '] = category
+                config_payload['entity_category'] = category
             if icon:
                 config_payload['icon'] = icon
             loglines = loglines + self._mqtt_send(
-                mqtt_config, json.dumps(config_payload))
-        loglines = loglines + self._mqtt_send(topic + 'state', payload)
+                mqtt_config, json.dumps(config_payload), log=log)
+        loglines = loglines + \
+            self._mqtt_send(topic + 'state', payload, log=log)
         return loglines
 
 
