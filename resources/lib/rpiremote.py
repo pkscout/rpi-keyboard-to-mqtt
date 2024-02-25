@@ -40,6 +40,14 @@ class OtherSensors(threading.Thread):
         self.LW.log(self.NOTIFIER.SendAvailability('online'))
         self.STARTUPTIME = datetime.now()
         config_opts = {'entity_category': 'diagnostic',
+                       'expire_after': 30,
+                       'icon': 'mdi:clock-check-outline'}
+        self.LW.log(self.NOTIFIER.Send(
+            'sensor',
+            '0s',
+            'Uptime',
+            config_opts=config_opts))
+        config_opts = {'entity_category': 'diagnostic',
                        'icon': 'mdi:ethernet'}
         self.LW.log(self.NOTIFIER.Send(
             'sensor',
@@ -48,6 +56,7 @@ class OtherSensors(threading.Thread):
             config_opts=config_opts))
         if has_psutil:
             config_opts = {'entity_category': 'diagnostic',
+                           'expire_after': 30,
                            'unit_of_measurement': '%',
                            'icon': 'mdi:cpu-32-bit'}
             self.LW.log(self.NOTIFIER.Send(
@@ -56,6 +65,7 @@ class OtherSensors(threading.Thread):
                 'CPU Load',
                 config_opts=config_opts))
             config_opts = {'entity_category': 'diagnostic',
+                           'expire_after': 30,
                            'unit_of_measurement': '%',
                            'icon': 'mdi:memory'}
             self.LW.log(self.NOTIFIER.Send(
@@ -63,13 +73,6 @@ class OtherSensors(threading.Thread):
                 psutil.virtual_memory()[2],
                 'Memory Used',
                 config_opts=config_opts))
-        config_opts = {'entity_category': 'diagnostic',
-                       'icon': 'mdi:clock-check-outline'}
-        self.LW.log(self.NOTIFIER.Send(
-            'sensor',
-            '0s',
-            'Uptime',
-            config_opts=config_opts))
 
     def Stop(self):
         self.KEEPRUNNING = False
