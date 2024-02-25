@@ -1,3 +1,7 @@
+v.1.2.0
+- added availability
+- updated notifier library to handle any sensor type
+
 v.1.1.1
 - fix to ensure entity ID is actually unique
 - added some additional diagnostic sensors

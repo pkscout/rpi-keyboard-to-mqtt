@@ -37,27 +37,39 @@ class OtherSensors(threading.Thread):
         self.KEEPRUNNING = True
         self.RUNNING = True
         self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
+        self.LW.log(self.NOTIFIER.SendAvailability('online'))
         self.STARTUPTIME = datetime.now()
+        config_opts = {'entity_category': 'diagnostic',
+                       'icon': 'mdi:ethernet'}
         self.LW.log(self.NOTIFIER.Send(
-            ':'.join(re.findall('..', '%012x' %
-                     uuid.getnode())), 'Mac address',
-            category='diagnostic',
-            icon='mdi:ethernet'))
+            'sensor',
+            ':'.join(re.findall('..', '%012x' % uuid.getnode())),
+            'Mac address',
+            config_opts=config_opts))
         if has_psutil:
+            config_opts = {'entity_category': 'diagnostic',
+                           'unit_of_measurement': '%',
+                           'icon': 'mdi:cpu-32-bit'}
             self.LW.log(self.NOTIFIER.Send(
-                psutil.cpu_percent(), 'CPU Load',
-                unit='%',
-                category='diagnostic',
-                icon='mdi:cpu-32-bit'))
+                'sensor',
+                psutil.cpu_percent(),
+                'CPU Load',
+                config_opts=config_opts))
+            config_opts = {'entity_category': 'diagnostic',
+                           'unit_of_measurement': '%',
+                           'icon': 'mdi:memory'}
             self.LW.log(self.NOTIFIER.Send(
-                psutil.virtual_memory()[2], 'Memory Used',
-                unit='%',
-                category='diagnostic',
-                icon='mdi:memory'))
+                'sensor',
+                psutil.virtual_memory()[2],
+                'Memory Used',
+                config_opts=config_opts))
+        config_opts = {'entity_category': 'diagnostic',
+                       'icon': 'mdi:clock-check-outline'}
         self.LW.log(self.NOTIFIER.Send(
-            '0s', 'Uptime',
-            category='diagnostic',
-            icon='mdi:clock-check-outline'))
+            'sensor',
+            '0s',
+            'Uptime',
+            config_opts=config_opts))
 
     def Stop(self):
         self.KEEPRUNNING = False
@@ -86,23 +98,19 @@ class OtherSensors(threading.Thread):
             time.sleep(self.UPDATE_INTERVAL)
             if has_psutil:
                 self.LW.log(self.NOTIFIER.Send(
-                    psutil.cpu_percent(), 'CPU Load',
-                    unit='%',
-                    category='diagnostic',
-                    icon='mdi:cpu-32-bit',
-                    log=False))
+                    'sensor',
+                    psutil.cpu_percent(),
+                    'CPU Load'))
                 self.LW.log(self.NOTIFIER.Send(
-                    psutil.virtual_memory()[2], 'Memory Used',
-                    unit='%',
-                    category='diagnostic',
-                    icon='mdi:memory',
-                    log=False))
+                    'sensor',
+                    psutil.virtual_memory()[2],
+                    'Memory Used'))
             self.LW.log(self.NOTIFIER.Send(
-                self._get_uptime(), 'Uptime',
-                category='diagnostic',
-                icon='mdi:clock-check-outline',
-                log=False))
+                'sensor',
+                self._get_uptime(),
+                'Uptime'))
         self.RUNNING = False
+        self.LW.log(self.NOTIFIER.SendAvailability('offline'))
 
 
 class RemoteForward:
@@ -112,16 +120,17 @@ class RemoteForward:
         self.KEEPRUNNING = True
         self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
         self.HOLDMIN = config.Get('holdmin')
+        config_opts = {'force_udpate': True, 'icon': 'mdi:button-pointer'}
         self.LW.log(self.NOTIFIER.Send(
-            '-1', 'Key Press',
-            force_update=True,
-            icon='mdi:button-pointer'))
+            'sensor',
+            'None',
+            'Key Press',
+            config_opts=config_opts))
 
     def Start(self):
         self.LW.log(['starting up RemoteForward'], 'info')
         try:
             down_time = None
-            last_update = datetime.now()
             while self.KEEPRUNNING:
                 e = keyboard.read_event()
                 if e.event_type == 'down' and not down_time:
@@ -137,11 +146,11 @@ class RemoteForward:
                         code = str(e.scan_code)
                     else:
                         code = str(e.scan_code) + '-L'
+                    self.LW.log(["sending code: " + str(code)], 'info')
                     self.LW.log(self.NOTIFIER.Send(
-                        code, 'Key Press',
-                        force_update=True,
-                        icon='mdi:button-pointer',
-                        log=False))
+                        'sensor',
+                        code,
+                        'Key Press'))
         except KeyboardInterrupt:
             self.KEEPRUNNING = False
         except Exception as e:
