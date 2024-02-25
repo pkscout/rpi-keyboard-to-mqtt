@@ -50,7 +50,7 @@ class MqttNotifier:
                        'configuration_url': config.Get('device_config_url')}
         a_path = self._fix_mqtt_path(config.Get('availability_path'))
         self.AVAILABILITY_TOPIC = '%s/%s/%s' % (
-            self.MQTTPATH, a_path, self.DEVICE_NAME)
+            self.MQTTPATH, a_path, _cleanup(self.DEVICE_NAME))
 
     def _fix_mqtt_path(self, path):
         if path[-1] == '/':
@@ -84,7 +84,7 @@ class MqttNotifier:
         loglines = []
         entity_id = _cleanup(friendly_name)
         topic = '%s/%s/%s/%s' % (self.MQTTPATH, sensor_type,
-                                 self.DEVICE_NAME, entity_id)
+                                 _cleanup(self.DEVICE_NAME), entity_id)
         if self.MQTTDISCOVER and (config_opts or send_config):
             config_payload = {}
             mqtt_config = '%s/%s' % (topic, 'config')
