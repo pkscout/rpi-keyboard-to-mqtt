@@ -123,7 +123,7 @@ class RemoteForward:
         self.KEEPRUNNING = True
         self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
         self.HOLDMIN = config.Get('holdmin')
-        config_opts = {'force_udpate': True, 'icon': 'mdi:button-pointer'}
+        config_opts = {'force_update': True, 'icon': 'mdi:button-pointer'}
         self.LW.log(self.NOTIFIER.Send(
             'sensor',
             'None',
