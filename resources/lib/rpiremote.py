@@ -37,7 +37,6 @@ class OtherSensors(threading.Thread):
         self.KEEPRUNNING = True
         self.RUNNING = True
         self.NOTIFIER = pick_notifier(config.Get('which_notifier'), lw)
-        self.LW.log(self.NOTIFIER.SendAvailability('online'))
         self.STARTUPTIME = datetime.now()
         config_opts = {'entity_category': 'diagnostic',
                        'expire_after': 30,
@@ -76,6 +75,7 @@ class OtherSensors(threading.Thread):
 
     def Stop(self):
         self.KEEPRUNNING = False
+        self.LW.log(self.NOTIFIER.SendAvailability('offline'))
 
     def Running(self):
         return self.RUNNING
@@ -113,7 +113,6 @@ class OtherSensors(threading.Thread):
                 self._get_uptime(),
                 'Uptime'))
         self.RUNNING = False
-        self.LW.log(self.NOTIFIER.SendAvailability('offline'))
 
 
 class RemoteForward:
@@ -129,6 +128,7 @@ class RemoteForward:
             'None',
             'Key Press',
             config_opts=config_opts))
+        self.LW.log(self.NOTIFIER.SendAvailability('online'))
 
     def Start(self):
         self.LW.log(['starting up RemoteForward'], 'info')
