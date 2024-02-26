@@ -1,3 +1,6 @@
+v.1.2.2
+- fix for last remote code being reused at reboot
+
 v.1.2.0
 - added availability
 - updated notifier library to handle any sensor type
