@@ -141,7 +141,11 @@ class RemoteForward:
                     self.LW.log(["key down at " + str(down_time)])
                 if e.event_type == 'up':
                     up_time = datetime.now()
-                    hold_time = (up_time - down_time).total_seconds() * 1000
+                    try:
+                        hold_time = (
+                            up_time - down_time).total_seconds() * 1000
+                    except TypeError:
+                        hold_time = 1
                     down_time = None
                     self.LW.log(["recieved code: " + str(e.scan_code)])
                     self.LW.log(["held for %sms" % str(hold_time)])
